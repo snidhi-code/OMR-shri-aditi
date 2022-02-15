@@ -14,11 +14,12 @@ public class FixedThresholdFilter implements PixelFilter, Interactive, Drawable 
     private int threshold;
 
     public FixedThresholdFilter() {
-        threshold = 200;
+        threshold = 127;
     }
 
     @Override
     public DImage processImage(DImage img) {
+        System.out.println("FixedThresholdFilter: " + img.getWidth() + " " + img.getHeight());
         short[][] grid = img.getBWPixelGrid();
 
         for (int r = 0; r < grid.length; r++) {
@@ -30,8 +31,6 @@ public class FixedThresholdFilter implements PixelFilter, Interactive, Drawable 
                 }
             }
         }
-
-        System.out.println("height: " + grid.length + " width: " + grid[0].length);
         img.setPixels(grid);
         //printPixels(grid);
         return img;
