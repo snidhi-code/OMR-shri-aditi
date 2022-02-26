@@ -19,7 +19,7 @@ public class FixedThresholdFilter implements PixelFilter, Interactive, Drawable 
 
     @Override
     public DImage processImage(DImage img) {
-        System.out.println("FixedThresholdFilter: " + img.getWidth() + " " + img.getHeight());
+        //System.out.println("FixedThresholdFilter: " + img.getWidth() + " " + img.getHeight());
         short[][] grid = img.getBWPixelGrid();
 
         for (int r = 0; r < grid.length; r++) {
