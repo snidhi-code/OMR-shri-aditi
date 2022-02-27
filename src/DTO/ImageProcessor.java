@@ -92,5 +92,24 @@ public class ImageProcessor {
         return id;
     }
 
+    public AnswerSheet scanMCQBatch(AnswerSheet answerSheet, int startIndex, int endIndex, int startRow, int startCol,
+                                    int numBubbles, int width, int height, int bubbleColGap, int bubbleRowGap) {
+        int runningRow = startRow;
+        int runningCol = startCol;
+        for (int q = startIndex; q < endIndex; q++) {
+            MCQ mcq = new MCQ(numBubbles);
+            //System.out.println("Question: " + (q+1));
+            for (int c = 0; c < numBubbles; c++) {
+                Choice choice = this.scanChoice(runningRow, runningCol, width, height, c, Constants.TYPE_CHOICE);
+                mcq.setChoiceAtIndex(choice, c);
+                runningCol = runningCol + width + bubbleColGap;
+            }
+            answerSheet.setMCQAtIndex(mcq, q);
+            runningRow = runningRow + height + bubbleRowGap;
+            runningCol = startCol;
+        }
+        return answerSheet;
+    }
+
 
 }

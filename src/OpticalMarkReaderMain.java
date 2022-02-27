@@ -50,7 +50,7 @@ public class OpticalMarkReaderMain {
             DImage thresholdImage = filter.processImage(img);
 
             // Step3.3: Process the page and create csv file for each student with score stats for all the questions
-            processAnswerPage(thresholdImage, answerKey, pageNumber,  Constants.WHITE_DISCOUNT_PERCENT, Constants.NUM_CHOICES);
+            processAnswerPage(thresholdImage, answerKey, Constants.WHITE_DISCOUNT_PERCENT, Constants.NUM_CHOICES);
         }
 
         // Step4: populateOverall Stats csv file for the class
@@ -72,47 +72,31 @@ public class OpticalMarkReaderMain {
      * @param whiteDiscountPercent
      * @param numChoices
      */
-    private static void processAnswerPage(DImage thresholdImage,  AnswerKey answerKey, int pageNumber, int whiteDiscountPercent, int numChoices) {
+    private static void processAnswerPage(DImage thresholdImage,  AnswerKey answerKey, int whiteDiscountPercent, int numChoices) {
+        // 0: Createw ImageProcessor object
         ImageProcessor processor = new ImageProcessor(thresholdImage, whiteDiscountPercent, numChoices);
         processor.processImage();
 
-        int startRow = 467;
-        int startCol = 126;
-        int width = 17;
-        int height = 19;
-        int bubbleColGap = 20;
-        int bubbleRowGap = 20;
-        int questionGap = 117;
-        int totalQuestions = 100;
-        int questionsPerRow = 4;
-        int numBubbles = 5;
-        int questionsPerCol = totalQuestions / questionsPerRow;
 
         // 1. Scan Student
-        ID student = processor.scanID(331, 77);
-        student.setId(student.getId() + "-" + pageNumber);
+        ID student = processor.scanID(Constants.STUDENT_START_ROW, Constants.STUDENT_START_COL);
 
         // 2. Scan Teacher
-        ID teacher = processor.scanID(331, 631);
+        ID teacher = processor.scanID(Constants.TEACHER_START_ROW, Constants.TEACHER_START_COL);
 
-        int runningRow = startRow;
-        int runningCol = startCol;
+        // 3. Scan  Multiple Choice Question answers and Create AnswerSheet Object
+        AnswerSheet answerSheet = new AnswerSheet(student.getId(), teacher.getId(), Constants.TOTAL_QUESTIONS);
+        for (int batch = 0; batch < Constants.QUESTIONS_PER_ROW; batch++) {
+            int startIndex = Constants.QUESTIONS_PER_COL * batch;
+            int endIndex = Constants.QUESTIONS_PER_COL + (Constants.QUESTIONS_PER_COL * batch);
+            int startRow = Constants.MCQ_STARTROW;
+            int startCol = Constants.MCQ_STARTCOL + batch * (Constants.NUM_CHOICES * Constants.CHOICE_WIDTH) +
+                    batch * ((Constants.NUM_CHOICES-1) * Constants.CHOICE_COL_GAP) + (batch * Constants.QUESTIONS_COL_GAP);
 
-        // 3. Scan  Multiple Choice Question answers
-        AnswerSheet answerSheet = new AnswerSheet(student.getId(), teacher.getId(), totalQuestions);
-        for (int q = 0; q < 25; q++) {
-            MCQ mcq = new MCQ(numBubbles);
-            //System.out.println("Question: " + (q+1));
-            for (int c = 0; c < numBubbles; c++) {
-                Choice choice = processor.scanChoice(runningRow, runningCol, width, height, c, Constants.TYPE_CHOICE);
-                mcq.setChoiceAtIndex(choice, c);
-                runningCol = runningCol + width + bubbleColGap;
-            }
-            answerSheet.setMCQAtIndex(mcq, q);
-            runningRow = runningRow + height + bubbleRowGap;
-            runningCol = startCol;
+            processor.scanMCQBatch(answerSheet, startIndex, endIndex, startRow, startCol, Constants.NUM_CHOICES,
+                    Constants.CHOICE_WIDTH, Constants.CHOICE_HEIGHT,
+                    Constants.CHOICE_COL_GAP, Constants.CHOICE_ROW_GAP);
         }
-
         System.out.println(answerSheet);
 
         // 4. Validate Answer Sheet
@@ -124,11 +108,6 @@ public class OpticalMarkReaderMain {
         }
     }
 
-    /**
-     * Loop through each student in overAllStatsMap and get their corresponding total score
-     * and generate the overall stats CSV file
-     * @param totalAnswers
-     */
     private static void writeOverAllStatsToCSV(int totalAnswers) {
         try{
             String filePath = "src/output/overallstats.csv";
